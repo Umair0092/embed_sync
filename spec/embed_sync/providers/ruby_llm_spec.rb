@@ -41,6 +41,14 @@ RSpec.describe "EmbedSync::Providers::RubyLLM" do
     expect { provider.embed(["a"], model: "m") }.to raise_error(EmbedSync::ProviderError, /rate limited/)
   end
 
+  it "turns network failures into EmbedSync::ProviderError" do
+    stub_const("Faraday::Error", Class.new(StandardError))
+    stub_const("Faraday::ConnectionFailed", Class.new(Faraday::Error))
+    allow(RubyLLM).to receive(:embed).and_raise(Faraday::ConnectionFailed, "Connection refused")
+
+    expect { provider.embed(["a"], model: "m") }.to raise_error(EmbedSync::ProviderError, /Connection refused/)
+  end
+
   it "rejects unknown options" do
     expect { EmbedSync::Providers.build(:ruby_llm, temperature: 1) }
       .to raise_error(EmbedSync::ConfigurationError, /Unknown ruby_llm provider options: temperature/)
@@ -66,6 +74,6 @@ RSpec.describe "has_embedding dimensions:" do
     record = EmbedSync.without_sync { klass.create!(name: "Shoe") }
 
     expect { EmbedSync::Sync.call([record], :title_embedding) }
-      .to raise_error(EmbedSync::ProviderError, /expects 3 dimensions, but m returned 8/)
+      .to raise_error(EmbedSync::DimensionMismatchError, /expects 3 dimensions, but m returned 8/)
   end
 end

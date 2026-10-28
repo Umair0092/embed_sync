@@ -31,7 +31,7 @@ module EmbedSync
     def embed_texts(texts, definition)
       return [] if texts.empty?
 
-      vectors = EmbedSync.provider.embed(texts, model: definition.model_name)
+      vectors = instrument(texts, definition) { EmbedSync.provider.embed(texts, model: definition.model_name) }
       unless vectors.is_a?(Array) && vectors.size == texts.size
         raise ProviderError, "Expected #{texts.size} vectors from the provider, got #{vectors.try(:size).inspect}"
       end
@@ -47,8 +47,15 @@ module EmbedSync
       wrong = vectors.find { |vector| vector.size != definition.dimensions }
       return unless wrong
 
-      raise ProviderError, "#{definition.column} expects #{definition.dimensions} dimensions, " \
-                           "but #{definition.model_name} returned #{wrong.size}"
+      raise DimensionMismatchError, "#{definition.column} expects #{definition.dimensions} dimensions, " \
+                                    "but #{definition.model_name} returned #{wrong.size}"
+    end
+
+    # Publishes "embed.embed_sync" with record_class, column, model and count (and exception, if raised).
+    def instrument(texts, definition, &)
+      payload = { record_class: definition.owner&.name, column: definition.column,
+                  model: definition.model_name, count: texts.size }
+      ActiveSupport::Notifications.instrument("embed.embed_sync", payload, &)
     end
   end
 end
