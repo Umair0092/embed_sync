@@ -39,8 +39,10 @@ module EmbedSync
       text.to_s
     end
 
+    # Fingerprint of everything that shapes the vector: the text, the model and the dimensions.
+    # Changing has_embedding's model: or dimensions: therefore marks every record stale.
     def digest(text)
-      Digest::SHA256.hexdigest(text)
+      Digest::SHA256.hexdigest("#{model_name}\n#{dimensions}\n#{text}")
     end
 
     def stale?(record)
