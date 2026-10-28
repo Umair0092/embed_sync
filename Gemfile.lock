@@ -2,10 +2,10 @@ PATH
   remote: .
   specs:
     embed_sync (0.1.0)
-      activejob (>= 7.1)
-      activerecord (>= 7.1)
-      activesupport (>= 7.1)
-      railties (>= 7.1)
+      activejob (>= 7.1, < 9)
+      activerecord (>= 7.1, < 9)
+      activesupport (>= 7.1, < 9)
+      railties (>= 7.1, < 9)
 
 GEM
   remote: https://rubygems.org/
@@ -79,12 +79,18 @@ GEM
     minitest (6.0.6)
       drb (~> 2.0)
       prism (~> 1.5)
+    neighbor (0.6.0)
+      activerecord (>= 7.1)
     nokogiri (1.19.4-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.4-x86_64-linux-gnu)
       racc (~> 1.4)
     parallel (1.28.0)
     parser (3.3.13.0)
       ast (~> 2.4.1)
       racc
+    pg (1.7.0-x86_64-darwin)
+    pg (1.7.0-x86_64-linux)
     pp (0.6.4)
       prettyprint
     prettyprint (0.2.1)
@@ -158,6 +164,7 @@ GEM
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
     sqlite3 (2.10.2-x86_64-darwin)
+    sqlite3 (2.10.2-x86_64-linux-gnu)
     thor (1.5.0)
     timeout (0.6.1)
     tsort (0.2.0)
@@ -172,10 +179,13 @@ GEM
 
 PLATFORMS
   x86_64-darwin-24
+  x86_64-linux
 
 DEPENDENCIES
   embed_sync!
   irb
+  neighbor (>= 0.5)
+  pg (>= 1.5)
   rake (~> 13.0)
   rspec (~> 3.0)
   rubocop (~> 1.21)
