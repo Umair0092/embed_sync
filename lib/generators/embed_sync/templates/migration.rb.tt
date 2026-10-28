@@ -1,0 +1,11 @@
+class Add<%= column.camelize %>To<%= table_name.camelize %> < ActiveRecord::Migration<%= migration_version %>
+  def change
+    enable_extension "vector"
+
+    add_column :<%= table_name %>, :<%= column %>, :vector, limit: <%= options[:dimensions] %>
+    add_column :<%= table_name %>, :<%= column %>_digest, :string
+<% if index? -%>
+    add_index :<%= table_name %>, :<%= column %>, using: :<%= options[:index] %>, opclass: :<%= opclass %>
+<% end -%>
+  end
+end
