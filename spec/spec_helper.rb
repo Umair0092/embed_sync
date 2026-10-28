@@ -14,12 +14,14 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
-  config.around do |example|
-    ActiveRecord::Base.transaction do
-      example.run
-      raise ActiveRecord::Rollback
-    end
+  config.before do
+    EmbedSync.config.provider = :fake
+    ActiveJob::Base.queue_adapter.enqueued_jobs.clear
   end
 
-  config.after { EmbedSync.reset_config! }
+  # Delete rows instead of wrapping examples in a transaction, so after_commit callbacks fire.
+  config.after do
+    EmbedSync.reset_config!
+    [Product, Category].each(&:delete_all)
+  end
 end

@@ -4,7 +4,7 @@ module EmbedSync
   # Global settings, changed through EmbedSync.configure.
   class Configuration
     attr_accessor :default_model, :queue, :batch_size
-    attr_reader :provider, :provider_options
+    attr_reader :sync, :provider, :provider_options
 
     def initialize
       @provider = nil
@@ -12,6 +12,16 @@ module EmbedSync
       @default_model = nil
       @queue = :default
       @batch_size = 100
+      @sync = :async
+    end
+
+    SYNC_MODES = [:async, :inline, false].freeze
+
+    # :async enqueues EmbedSync::EmbedJob after commit, :inline embeds right away, false turns syncing off.
+    def sync=(mode)
+      raise ConfigurationError, "sync must be one of #{SYNC_MODES.inspect}" unless SYNC_MODES.include?(mode)
+
+      @sync = mode
     end
 
     # Accepts a registered provider name (e.g. :fake) or any object that responds to #embed.
