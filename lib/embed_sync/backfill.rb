@@ -10,7 +10,7 @@ module EmbedSync
     # Accepts a model or a relation, e.g. Product.includes(:category). Yields the running total.
     def run(scope, column: nil, batch_size: nil, force: false)
       relation = scope.all
-      definition = definition_for(relation.klass, column)
+      definition = relation.klass.embed_sync_definition(column)
       written = 0
       relation.find_in_batches(batch_size: batch_size || EmbedSync.config.batch_size) do |batch|
         written += Sync.call(batch, definition.column, force: force)
@@ -23,20 +23,10 @@ module EmbedSync
     # them plus rows whose text changed since. Loads every record, so it can take a while.
     def report(scope, column: nil)
       relation = scope.all
-      definition = definition_for(relation.klass, column)
+      definition = relation.klass.embed_sync_definition(column)
       stale = 0
       relation.find_each { |record| stale += 1 if definition.stale?(record) }
       { total: relation.count, missing: relation.where(definition.digest_column => nil).count, stale: stale }
-    end
-
-    def definition_for(klass, column)
-      return klass.embed_sync_definition(column) if column
-
-      definitions = klass.embed_sync_definitions.values
-      return definitions.first if definitions.one?
-
-      raise ArgumentError, "#{klass.name} has #{definitions.size} embeddings; pass column: " \
-                           "(one of #{definitions.map(&:column).join(", ")})"
     end
   end
 end

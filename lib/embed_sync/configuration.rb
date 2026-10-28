@@ -3,7 +3,7 @@
 module EmbedSync
   # Global settings, changed through EmbedSync.configure.
   class Configuration
-    attr_accessor :default_model, :queue, :batch_size
+    attr_accessor :default_model, :queue, :batch_size, :query_cache, :query_cache_expires_in
     attr_reader :sync, :provider, :provider_options
 
     def initialize
@@ -13,6 +13,8 @@ module EmbedSync
       @queue = :default
       @batch_size = 100
       @sync = :async
+      @query_cache = nil
+      @query_cache_expires_in = 86_400
     end
 
     SYNC_MODES = [:async, :inline, false].freeze
