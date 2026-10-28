@@ -6,12 +6,13 @@ module EmbedSync
   # Describes one embedding declared with has_embedding: which column holds the vector,
   # where its text comes from, and which column stores the digest of that text.
   class Definition
-    attr_reader :column, :source, :digest_column
+    attr_reader :column, :source, :digest_column, :dimensions
 
-    def initialize(column:, from:, model: nil, digest_column: nil, sync: nil)
+    def initialize(column:, from:, model: nil, digest_column: nil, sync: nil, dimensions: nil)
       @column = column.to_sym
       @source = from
       @model = model
+      @dimensions = dimensions
       @digest_column = (digest_column || "#{column}_digest").to_sym
       @sync = sync
       validate_source!

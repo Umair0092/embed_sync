@@ -6,6 +6,7 @@ module EmbedSync
     extend ActiveSupport::Concern
 
     CALLBACK_OPTIONS = %i[if unless].freeze
+    OPTIONS = (CALLBACK_OPTIONS + %i[model dimensions digest_column sync]).freeze
 
     included do
       class_attribute :embed_sync_definitions, instance_writer: false, default: {}
@@ -14,12 +15,15 @@ module EmbedSync
     class_methods do
       # has_embedding :embedding, from: %i[name description]
       # has_embedding :embedding, from: -> { "#{name}\n#{category&.name}" }, model: "text-embedding-3-small",
-      #               sync: :inline, if: :published?
-      def has_embedding(column = :embedding, from:, model: nil, digest_column: nil, sync: nil, **callback_options) # rubocop:disable Naming/PredicatePrefix
-        unknown = callback_options.keys - CALLBACK_OPTIONS
+      #               dimensions: 1536, sync: :inline, if: :published?
+      #
+      # Options: model:, dimensions:, digest_column:, sync: (:async, :inline, false), if:, unless:
+      def has_embedding(column = :embedding, from:, **options) # rubocop:disable Naming/PredicatePrefix
+        unknown = options.keys - OPTIONS
         raise ArgumentError, "Unknown has_embedding options: #{unknown.join(", ")}" if unknown.any?
 
-        definition = Definition.new(column: column, from: from, model: model, digest_column: digest_column, sync: sync)
+        callback_options = options.slice(*CALLBACK_OPTIONS)
+        definition = Definition.new(column: column, from: from, **options.except(*CALLBACK_OPTIONS))
         self.embed_sync_definitions = embed_sync_definitions.merge(definition.column => definition)
         define_embedding_methods(definition)
         after_commit(on: %i[create update], **callback_options) { EmbedSync.sync_record(self, definition.column) }

@@ -7,7 +7,7 @@ module EmbedSync
     attr_reader :sync, :provider, :provider_options
 
     def initialize
-      @provider = nil
+      @provider = :ruby_llm
       @provider_options = {}
       @default_model = nil
       @queue = :default
