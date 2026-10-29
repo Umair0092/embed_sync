@@ -23,11 +23,16 @@ module EmbedSync
         vectors = ::RubyLLM.embed(texts, model: model, **@options).vectors
         # RubyLLM returns a flat vector when it embedded a single text.
         vectors.first.is_a?(Numeric) ? [vectors] : vectors
-      rescue ::RubyLLM::Error => e
+      rescue *retryable_errors => e
         raise ProviderError, "#{e.class}: #{e.message}"
       end
 
       private
+
+      # API errors (rate limits, 5xx, bad keys) plus network failures, which ruby_llm lets through from Faraday.
+      def retryable_errors
+        [::RubyLLM::Error, (::Faraday::Error if defined?(::Faraday::Error))].compact
+      end
 
       def load_ruby_llm
         require "ruby_llm" unless defined?(::RubyLLM.embed)

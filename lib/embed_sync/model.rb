@@ -24,7 +24,7 @@ module EmbedSync
         raise ArgumentError, "Unknown has_embedding options: #{unknown.join(", ")}" if unknown.any?
 
         callback_options = options.slice(*CALLBACK_OPTIONS)
-        definition = Definition.new(column: column, from: from, **options.except(*CALLBACK_OPTIONS))
+        definition = Definition.new(column: column, from: from, owner: self, **options.except(*CALLBACK_OPTIONS))
         self.embed_sync_definitions = embed_sync_definitions.merge(definition.column => definition)
         define_embedding_methods(definition)
         after_commit(on: %i[create update], **callback_options) { EmbedSync.sync_record(self, definition.column) }
