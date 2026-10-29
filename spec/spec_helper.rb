@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "embed_sync"
+require_relative "support/database"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -11,6 +12,13 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+  end
+
+  config.around do |example|
+    ActiveRecord::Base.transaction do
+      example.run
+      raise ActiveRecord::Rollback
+    end
   end
 
   config.after { EmbedSync.reset_config! }
