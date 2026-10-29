@@ -9,3 +9,6 @@
 
 # rspec failure tracking
 .rspec_status
+
+# lockfiles for the Rails version matrix are resolved fresh in CI
+/gemfiles/*.lock
