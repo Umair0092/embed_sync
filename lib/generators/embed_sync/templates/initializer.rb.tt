@@ -1,0 +1,20 @@
+# frozen_string_literal: true
+
+EmbedSync.configure do |config|
+  # Service that generates embeddings: a registered name or any object that responds to
+  # #embed(texts, model:). :fake returns deterministic vectors and never calls an API.
+  config.provider = :fake
+  # config.provider_options = { dimensions: 1536 }
+
+  # Embedding model used when has_embedding doesn't pass model:.
+  config.default_model = "text-embedding-3-small"
+
+  # :async (enqueue EmbedSync::EmbedJob after commit), :inline (embed during the commit) or false.
+  config.sync = Rails.env.test? ? false : :async
+
+  # Active Job queue for EmbedSync::EmbedJob.
+  config.queue = :default
+
+  # Records per provider call when backfilling.
+  config.batch_size = 100
+end
