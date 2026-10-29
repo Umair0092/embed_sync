@@ -7,6 +7,11 @@ RSpec.describe EmbedSync::Configuration do
     expect(config.provider).to be_nil
     expect(config.queue).to eq(:default)
     expect(config.batch_size).to eq(100)
+    expect(config.sync).to eq(:async)
+  end
+
+  it "validates the sync mode" do
+    expect { described_class.new.sync = :later }.to raise_error(EmbedSync::ConfigurationError, /sync must be/)
   end
 
   describe "EmbedSync.configure" do
@@ -23,6 +28,8 @@ RSpec.describe EmbedSync::Configuration do
 
   describe "#resolved_provider" do
     it "raises when no provider is configured" do
+      EmbedSync.reset_config!
+
       expect { EmbedSync.provider }.to raise_error(EmbedSync::ConfigurationError, /No embedding provider/)
     end
 

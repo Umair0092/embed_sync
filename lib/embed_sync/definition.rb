@@ -8,12 +8,18 @@ module EmbedSync
   class Definition
     attr_reader :column, :source, :digest_column
 
-    def initialize(column:, from:, model: nil, digest_column: nil)
+    def initialize(column:, from:, model: nil, digest_column: nil, sync: nil)
       @column = column.to_sym
       @source = from
       @model = model
       @digest_column = (digest_column || "#{column}_digest").to_sym
+      @sync = sync
       validate_source!
+      validate_sync!
+    end
+
+    def sync_mode
+      @sync.nil? ? EmbedSync.config.sync : @sync
     end
 
     def model_name
@@ -49,6 +55,12 @@ module EmbedSync
       return if source.is_a?(Array) && source.any?
 
       raise ArgumentError, "has_embedding from: must be an attribute name, an array of names or a proc"
+    end
+
+    def validate_sync!
+      return if @sync.nil? || Configuration::SYNC_MODES.include?(@sync)
+
+      raise ArgumentError, "has_embedding sync: must be one of #{Configuration::SYNC_MODES.inspect}"
     end
   end
 end

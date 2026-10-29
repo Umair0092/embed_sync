@@ -1,6 +1,13 @@
 # frozen_string_literal: true
 
 require "active_record"
+require "active_job"
+require "global_id"
+
+GlobalID.app = "embed-sync-test"
+ActiveRecord::Base.include GlobalID::Identification
+ActiveJob::Base.queue_adapter = :test
+ActiveJob::Base.logger = Logger.new(nil)
 
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 ActiveRecord::Migration.verbose = false
@@ -13,6 +20,7 @@ ActiveRecord::Schema.define do
   create_table :products, force: true do |t|
     t.string :name
     t.text :description
+    t.boolean :published, default: true
     t.references :category
     t.json :embedding
     t.string :embedding_digest

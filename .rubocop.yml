@@ -16,3 +16,9 @@ Metrics/BlockLength:
 
 Metrics/MethodLength:
   Max: 15
+
+Metrics/AbcSize:
+  Max: 20
+
+Metrics/ParameterLists:
+  CountKeywordArgs: false
