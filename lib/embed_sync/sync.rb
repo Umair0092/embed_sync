@@ -36,7 +36,19 @@ module EmbedSync
         raise ProviderError, "Expected #{texts.size} vectors from the provider, got #{vectors.try(:size).inspect}"
       end
 
+      check_dimensions!(vectors, definition)
+
       vectors
+    end
+
+    def check_dimensions!(vectors, definition)
+      return unless definition.dimensions
+
+      wrong = vectors.find { |vector| vector.size != definition.dimensions }
+      return unless wrong
+
+      raise ProviderError, "#{definition.column} expects #{definition.dimensions} dimensions, " \
+                           "but #{definition.model_name} returned #{wrong.size}"
     end
   end
 end

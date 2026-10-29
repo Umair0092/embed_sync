@@ -4,7 +4,7 @@ RSpec.describe EmbedSync::Configuration do
   it "has sensible defaults" do
     config = described_class.new
 
-    expect(config.provider).to be_nil
+    expect(config.provider).to eq(:ruby_llm)
     expect(config.queue).to eq(:default)
     expect(config.batch_size).to eq(100)
     expect(config.sync).to eq(:async)
@@ -28,7 +28,7 @@ RSpec.describe EmbedSync::Configuration do
 
   describe "#resolved_provider" do
     it "raises when no provider is configured" do
-      EmbedSync.reset_config!
+      EmbedSync.config.provider = nil
 
       expect { EmbedSync.provider }.to raise_error(EmbedSync::ConfigurationError, /No embedding provider/)
     end

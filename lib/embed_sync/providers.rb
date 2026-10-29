@@ -20,6 +20,7 @@ module EmbedSync
           raise ConfigurationError,
                 "Unknown provider #{name.inspect}. Registered providers: #{registered.join(", ")}"
         end
+        require_relative "providers/ruby_llm" if class_name == "EmbedSync::Providers::RubyLLM"
         Object.const_get(class_name).new(**)
       end
     end
@@ -30,3 +31,4 @@ require_relative "providers/base"
 require_relative "providers/fake"
 
 EmbedSync::Providers.register(:fake, "EmbedSync::Providers::Fake")
+EmbedSync::Providers.register(:ruby_llm, "EmbedSync::Providers::RubyLLM")

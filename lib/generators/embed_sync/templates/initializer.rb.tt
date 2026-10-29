@@ -2,8 +2,11 @@
 
 EmbedSync.configure do |config|
   # Service that generates embeddings: a registered name or any object that responds to
-  # #embed(texts, model:). :fake returns deterministic vectors and never calls an API.
-  config.provider = :fake
+  # #embed(texts, model:).
+  #   :ruby_llm  uses the ruby_llm gem; set API keys with RubyLLM.configure (e.g. config.openai_api_key)
+  #   :fake      deterministic vectors, never calls an API (good for tests)
+  config.provider = Rails.env.test? ? :fake : :ruby_llm
+  # Passed to RubyLLM.embed: dimensions:, provider:, assume_model_exists:, task_type:, provider_options:
   # config.provider_options = { dimensions: 1536 }
 
   # Embedding model used when has_embedding doesn't pass model:.
