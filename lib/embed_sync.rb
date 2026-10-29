@@ -10,6 +10,7 @@ require_relative "embed_sync/configuration"
 require_relative "embed_sync/providers"
 require_relative "embed_sync/definition"
 require_relative "embed_sync/sync"
+require_relative "embed_sync/backfill"
 
 # Keeps vector embeddings in sync with ActiveRecord models.
 module EmbedSync
@@ -46,6 +47,15 @@ module EmbedSync
       !ActiveSupport::IsolatedExecutionState[:embed_sync_disabled]
     end
 
+    # EmbedSync.backfill(Product) / EmbedSync.backfill(Product.includes(:category), column: :embedding)
+    def backfill(scope, **, &)
+      Backfill.run(scope, **, &)
+    end
+
+    def stale_report(scope, **)
+      Backfill.report(scope, **)
+    end
+
     # Called after commit: queues or runs the embedding when the record's text changed.
     def sync_record(record, column)
       return unless sync_enabled?
@@ -64,3 +74,5 @@ end
 ActiveSupport.on_load(:active_record) do
   include EmbedSync::Model
 end
+
+require_relative "embed_sync/railtie" if defined?(Rails::Railtie)

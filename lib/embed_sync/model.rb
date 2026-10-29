@@ -40,6 +40,7 @@ module EmbedSync
         define_method(:"#{column}_source_text") { definition.source_text(self) }
         define_method(:"#{column}_stale?") { definition.stale?(self) }
         define_method(:"refresh_#{column}!") { Sync.call([self], column, force: true) }
+        scope :"#{column}_missing", -> { where(definition.digest_column => nil) }
       end
     end
   end
