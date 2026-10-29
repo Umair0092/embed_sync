@@ -12,3 +12,7 @@ First release.
 - Providers: `:ruby_llm` (default) and `:fake`; custom providers are any object with `#embed(texts, model:)`
 - `Model.embed_query` and `Model.semantic_search` (neighbor), with an optional query cache
 - `embed.embed_sync` instrumentation and log subscriber; retries with backoff; Solid Queue concurrency limit
+- `EmbedSync::InvalidRequestError` for requests the provider rejects (text too long, bad key): not retried, and
+  backfill skips those records instead of stopping
+- Provider failures in `:inline` mode are logged instead of raising from an already-committed `save`
+- Embeddings computed for an older version of a record's text are discarded instead of overwriting newer ones

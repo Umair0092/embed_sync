@@ -70,6 +70,23 @@ RSpec.describe "Generators" do
       expect(read("app/models/product.rb")).to include("  has_embedding :embedding, from: %i[name description]\n")
     end
 
+    it "adds has_embedding to a namespaced model written as class Admin::Product" do
+      FileUtils.mkdir_p(File.join(@root, "app/models/admin"))
+      File.write(File.join(@root, "app/models/admin/product.rb"), "class Admin::Product < ApplicationRecord\nend\n")
+      run_generator(described_class, %w[Admin::Product name])
+
+      expect(read("app/models/admin/product.rb")).to include("has_embedding :embedding, from: :name\n")
+    end
+
+    it "adds has_embedding to a namespaced model nested in a module" do
+      FileUtils.mkdir_p(File.join(@root, "app/models/admin"))
+      File.write(File.join(@root, "app/models/admin/product.rb"),
+                 "module Admin\n  class Product < ApplicationRecord\n  end\nend\n")
+      run_generator(described_class, %w[Admin::Product name])
+
+      expect(read("app/models/admin/product.rb")).to include("has_embedding :embedding, from: :name\n")
+    end
+
     it "uses a symbol for a single attribute" do
       run_generator(described_class, %w[Product name])
 
