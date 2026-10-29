@@ -6,7 +6,7 @@ module EmbedSync
   # Describes one embedding declared with has_embedding: which column holds the vector,
   # where its text comes from, and which column stores the digest of that text.
   class Definition
-    attr_reader :column, :source, :digest_column, :dimensions, :owner
+    attr_reader :column, :source, :digest_column, :owner
 
     def initialize(column:, from:, model: nil, digest_column: nil, sync: nil, dimensions: nil, owner: nil)
       @owner = owner
@@ -24,6 +24,11 @@ module EmbedSync
       @sync.nil? ? EmbedSync.config.sync : @sync
     end
 
+    # has_embedding's dimensions:, else the size requested from the provider (provider_options[:dimensions]).
+    def dimensions
+      @dimensions || EmbedSync.config.provider_options[:dimensions]
+    end
+
     def model_name
       @model || EmbedSync.config.default_model ||
         raise(ConfigurationError,
@@ -32,7 +37,7 @@ module EmbedSync
 
     def source_text(record)
       text = case source
-             when Proc then record.instance_exec(&source)
+             when Proc then source.arity.zero? ? record.instance_exec(&source) : record.instance_exec(record, &source)
              when Array then source.filter_map { |attr| record.public_send(attr).presence }.join("\n")
              else record.public_send(source)
              end
@@ -40,7 +45,7 @@ module EmbedSync
     end
 
     # Fingerprint of everything that shapes the vector: the text, the model and the dimensions.
-    # Changing has_embedding's model: or dimensions: therefore marks every record stale.
+    # Changing the model or the dimensions therefore marks every record stale.
     def digest(text)
       Digest::SHA256.hexdigest("#{model_name}\n#{dimensions}\n#{text}")
     end

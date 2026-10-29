@@ -36,7 +36,7 @@ module EmbedSync
     end
 
     def provider_options=(options)
-      @provider_options = options
+      @provider_options = (options || {}).to_h.transform_keys(&:to_sym)
       @resolved_provider = nil
     end
 

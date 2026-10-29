@@ -10,10 +10,19 @@ namespace :embed_sync do
     end
   end
 
+  # Without a model name, each embedding is visited once, on the class that declared it: STI subclasses
+  # inherit their parent's has_embedding and their rows are already covered by the parent's table scan.
   each_embedding = lambda do |args, &block|
+    explicit = args[:model].present?
     find_models.call(args[:model]).each do |model|
-      columns = args[:column].present? ? [args[:column]] : model.embed_sync_definitions.keys
-      columns.each { |column| block.call(model, column) }
+      definitions = model.embed_sync_definitions.values
+      definitions = definitions.select { |d| d.column.to_s == args[:column].to_s } if args[:column].present?
+      definitions = definitions.select { |d| d.owner == model } unless explicit
+      if explicit && definitions.empty?
+        raise ArgumentError, "#{model.name} has no has_embedding for #{args[:column].inspect}"
+      end
+
+      definitions.each { |definition| block.call(model, definition.column) }
     end
   end
 

@@ -78,6 +78,8 @@ RSpec.describe "Production hardening" do
         job.apply_concurrency_limit(2)
 
         expect(received).to include(to: 2, duration: 900)
+        # Solid Queue calls duration.from_now when it takes the lock, so a plain Integer crashes enqueueing.
+        expect(received[:duration]).to be_a(ActiveSupport::Duration)
         expect(received[:key].call).to eq("embed_sync")
       end
 

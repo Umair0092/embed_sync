@@ -21,6 +21,7 @@ ActiveRecord::Schema.define do
     t.string :name
     t.text :description
     t.boolean :published, default: true
+    t.string :kind
     t.references :category
     t.json :embedding
     t.string :embedding_digest

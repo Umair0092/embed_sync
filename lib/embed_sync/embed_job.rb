@@ -14,8 +14,12 @@ module EmbedSync
     # The record was deleted before the job ran; nothing to embed.
     discard_on ActiveJob::DeserializationError
 
+    # The provider rejected the text (too long, bad key, unknown model): retrying gives the same answer.
+    # The failure is logged and the record stays stale, so embed_sync:stale still reports it.
+    discard_on InvalidRequestError
+
     def perform(record, column)
-      Sync.call([record], column)
+      Sync.call([record], column, recheck: true)
     end
 
     # With Solid Queue, caps how many EmbedJobs run at once across all workers, so a large import can't
@@ -25,7 +29,7 @@ module EmbedSync
         raise ConfigurationError, "config.concurrency_limit needs Solid Queue (limits_concurrency)"
       end
 
-      limits_concurrency(to: limit, key: ->(*) { "embed_sync" }, duration: 15 * 60)
+      limits_concurrency(to: limit, key: ->(*) { "embed_sync" }, duration: ActiveSupport::Duration.minutes(15))
     end
   end
 end

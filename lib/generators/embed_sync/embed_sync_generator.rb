@@ -44,7 +44,10 @@ module EmbedSync
           return
         end
 
-        inject_into_class path, class_name.demodulize, model_lines
+        # Matches both `class Admin::Product` and `module Admin; class Product`.
+        source = File.read(File.join(destination_root, path))
+        name = source.match?(/class\s+#{Regexp.escape(class_name)}\b/) ? class_name : class_name.demodulize
+        inject_into_class path, name, model_lines
       end
 
       # Without neighbor, Rails doesn't know the vector type: it drops limit:, the index fails and

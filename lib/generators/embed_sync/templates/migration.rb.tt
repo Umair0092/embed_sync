@@ -1,6 +1,7 @@
 class Add<%= column.camelize %>To<%= table_name.camelize %> < ActiveRecord::Migration<%= migration_version %>
   def change
-    enable_extension "vector"
+    # Guarded so rolling back this migration doesn't try to drop the extension other vector columns use.
+    enable_extension "vector" unless extension_enabled?("vector")
 
     add_column :<%= table_name %>, :<%= column %>, :vector, limit: <%= options[:dimensions] %>
     add_column :<%= table_name %>, :<%= column %>_digest, :string

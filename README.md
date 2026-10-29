@@ -65,7 +65,7 @@ class Product < ApplicationRecord
   # Attribute names are joined with newlines (blank values are skipped)
   has_embedding :embedding, from: %i[name description]
 
-  # ...or build the text yourself; the lambda runs on the record
+  # ...or build the text yourself; the lambda runs on the record (or takes it: ->(product) { ... })
   has_embedding :embedding, from: -> { "#{name}\nCategory: #{category&.name}" }
 end
 ```
@@ -74,7 +74,7 @@ end
 |---|---|---|
 | `from:` | (required) | attribute, array of attributes, or lambda |
 | `model:` | `config.default_model` | embedding model name |
-| `dimensions:` | none | rejects vectors of a different size (`DimensionMismatchError`) |
+| `dimensions:` | `provider_options[:dimensions]` | rejects vectors of a different size (`DimensionMismatchError`); not sent to the provider |
 | `sync:` | `config.sync` (`:async`) | `:async` (Active Job after commit), `:inline`, or `false` |
 | `if:` / `unless:` | none | only sync matching records, as with Rails callbacks |
 | `digest_column:` | `<column>_digest` | where the text digest is stored |
@@ -93,7 +93,7 @@ Product.embed_query("red shoes")  # vector for a search string, using the column
 Product.where(published: true).semantic_search("red shoes", limit: 10, distance: "cosine")
 # results respond to #neighbor_distance
 
-EmbedSync.without_sync { import_products! }        # no jobs during bulk imports
+EmbedSync.without_sync { import_products! }        # no jobs during bulk imports (also inside a transaction)
 EmbedSync.backfill(Product.includes(:category))    # => number of records embedded
 EmbedSync.stale_report(Product)                    # => { total:, missing:, stale: }
 ```
@@ -140,26 +140,29 @@ end
 EmbedSync.config.provider = MyProvider.new
 ```
 
-Raise `EmbedSync::ProviderError` for errors worth retrying (rate limits, timeouts).
+Raise `EmbedSync::ProviderError` for errors worth retrying (rate limits, timeouts) and `EmbedSync::InvalidRequestError` for requests that will never succeed (text too long, bad API key).
 
 ## Production notes
 
-- **Retries:** `EmbedSync::EmbedJob` retries `ProviderError` 5 times with polynomial backoff, and discards jobs for deleted records. Override in an initializer: `EmbedSync::EmbedJob.retry_on EmbedSync::ProviderError, wait: 1.minute, attempts: 10`.
+- **Retries:** `EmbedSync::EmbedJob` retries `ProviderError` 5 times with polynomial backoff, and discards jobs for deleted records and for `InvalidRequestError` (retrying a rejected request doesn't help).
+- **Failures don't break saves or backfills:** with `sync: :inline`, a provider error is logged and the record stays stale instead of raising from `save`. Backfill skips records the provider rejects and carries on; `embed_sync:stale` still lists them.
+- **Long texts:** embedding models have an input limit (about 8k tokens for OpenAI and nomic-embed-text). Records over it are rejected and stay stale; trim them in the source, e.g. `from: -> { "#{name}\n#{description}".first(20_000) }`.
+- **Concurrent edits:** if a record changes while its embedding is being generated, the older result is discarded rather than written over the newer text. Override in an initializer: `EmbedSync::EmbedJob.retry_on EmbedSync::ProviderError, wait: 1.minute, attempts: 10`.
 - **Rate limits:** with Solid Queue, `config.concurrency_limit = 2` caps how many embedding jobs run at once.
 - **Observability:** every provider call publishes `embed.embed_sync` (`record_class`, `column`, `model`, `count`) and is logged:
   ```
   EmbedSync (182.4ms) embedded 100 Product#embedding texts with text-embedding-3-small
   ```
-- **Changing models:** the digest covers the model and dimensions, so changing either marks every row stale. For live search, add a second column (`--column=embedding_v2`), backfill it, switch `semantic_search(..., column: :embedding_v2)`, then drop the old one.
+- **Changing models:** the digest covers the model and dimensions (`has_embedding dimensions:` or `provider_options[:dimensions]`), so changing either marks every row stale and gives search queries a new cache key. For live search, add a second column (`--column=embedding_v2`), backfill it, switch `semantic_search(..., column: :embedding_v2)`, then drop the old one.
 
 ## Testing your app
 
-Use the deterministic, offline `:fake` provider in tests:
+Use the deterministic, offline `:fake` provider in tests. The install generator sets this up, with syncing off so tests don't embed unless they ask to:
 
 ```ruby
 # config/initializers/embed_sync.rb
 config.provider = Rails.env.test? ? :fake : :ruby_llm
-config.sync = :inline if Rails.env.test?
+config.sync = Rails.env.test? ? false : :async   # use :inline in tests that need real vectors
 ```
 
 `EmbedSync.provider.calls` records every call made to the fake.

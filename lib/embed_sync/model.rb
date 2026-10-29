@@ -12,6 +12,18 @@ module EmbedSync
       class_attribute :embed_sync_definitions, instance_writer: false, default: {}
     end
 
+    # True when the last save happened inside EmbedSync.without_sync. Captured at save time because
+    # after_commit runs later, after a surrounding transaction (and the without_sync block) has ended.
+    def embed_sync_skipped?
+      @embed_sync_skipped == true
+    end
+
+    private
+
+    def embed_sync_capture_sync_state
+      @embed_sync_skipped = !EmbedSync.sync_enabled?
+    end
+
     # Class methods added to every model (Concern extends the model with ClassMethods).
     module ClassMethods
       # has_embedding :embedding, from: %i[name description]
@@ -27,6 +39,7 @@ module EmbedSync
         definition = Definition.new(column: column, from: from, owner: self, **options.except(*CALLBACK_OPTIONS))
         self.embed_sync_definitions = embed_sync_definitions.merge(definition.column => definition)
         define_embedding_methods(definition)
+        after_save :embed_sync_capture_sync_state
         after_commit(on: %i[create update], **callback_options) { EmbedSync.sync_record(self, definition.column) }
 
         definition
