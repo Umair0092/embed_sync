@@ -11,6 +11,7 @@ require_relative "embed_sync/providers"
 require_relative "embed_sync/definition"
 require_relative "embed_sync/sync"
 require_relative "embed_sync/backfill"
+require_relative "embed_sync/query"
 
 # Keeps vector embeddings in sync with ActiveRecord models.
 module EmbedSync
