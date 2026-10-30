@@ -1,5 +1,6 @@
 # EmbedSync
 
+[![Gem Version](https://badge.fury.io/rb/embed_sync.svg)](https://rubygems.org/gems/embed_sync)
 [![CI](https://github.com/Umair0092/embed_sync/actions/workflows/main.yml/badge.svg)](https://github.com/Umair0092/embed_sync/actions/workflows/main.yml)
 
 > Keep vector embeddings in sync with your ActiveRecord models.
