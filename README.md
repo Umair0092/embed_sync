@@ -23,6 +23,26 @@ Product.create!(name: "Trail runner", description: "Waterproof running shoe")  #
 Product.semantic_search("shoes for rainy hikes", limit: 5)
 ```
 
+## When to use it
+
+Use EmbedSync if your Rails app stores embeddings in Postgres (pgvector) for semantic search or RAG, and you're writing the glue code yourself:
+
+- embeddings go stale when records are edited, and you re-embed by hand or on a schedule
+- an `after_save` callback calls the embeddings API on every save, even when the text didn't change
+- you need to backfill embeddings for an existing table without blocking deploys or blowing past rate limits
+- you switched embedding models (or dimensions) and need to find and re-embed every affected row
+
+It's not a vector database client or an LLM framework: it keeps one thing correct, the vectors in your own tables.
+
+## How it compares
+
+| Gem | What it does | Use it with EmbedSync? |
+|---|---|---|
+| [neighbor](https://github.com/ankane/neighbor) | Nearest neighbor search and vector column types for Rails | Yes: EmbedSync fills the columns, neighbor searches them |
+| [ruby_llm](https://github.com/crmne/ruby_llm) | One API for many LLM providers, including embeddings | Yes: it's the default provider EmbedSync calls |
+| [pgvector](https://github.com/pgvector/pgvector-ruby) | Low-level pgvector support for Ruby | Not needed for Rails apps that use neighbor |
+| [langchainrb_rails](https://github.com/patterns-ai-core/langchainrb_rails) | LLM toolkit for Rails: vector search over pgvector, Pinecone or Qdrant, plus Q&A over your records | Pick one: langchainrb_rails if you want the wider toolkit or an external vector store; EmbedSync if you want pgvector columns kept up to date with change detection, background jobs and stale-record reports |
+
 ## Requirements
 
 - Ruby 3.2+, Rails 7.1+ (tested on 7.1, 7.2, 8.0 and 8.1)
